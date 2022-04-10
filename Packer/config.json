@@ -2,7 +2,7 @@ autoinstall:
   version: 1
   identity:
     hostname: ubuntu-server
-    password: 'black4me'
+    password: ''
     username: khwezi
   network:
     network:
