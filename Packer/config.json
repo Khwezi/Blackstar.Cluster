@@ -1,0 +1,15 @@
+autoinstall:
+  version: 1
+  identity:
+    hostname: ubuntu-server
+    password: 'black4me'
+    username: khwezi
+  network:
+    network:
+      version: 2
+      ethernets:
+        vmbr0:
+          dhcp4: true
+          dhcp-identifier: linux
+  ssh:
+    install-server: true

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: www-nginx
+  namespace: example
+  labels:
+    app: www-nginx
+spec:
+  containers:
+  - name: www-nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80

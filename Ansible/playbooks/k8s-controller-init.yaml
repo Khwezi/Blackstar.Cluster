@@ -1,0 +1,182 @@
+- hosts: "mains"
+  remote_user: khwezi  
+  become: true
+  become_method: sudo
+  become_user: root
+  gather_facts: true
+  any_errors_fatal: true
+  connection: ssh
+  tasks:
+    - name: APT Update
+      apt: update_cache=yes
+
+    - name: APT Install recommended packages
+      apt: upgrade=yes
+
+    - name: APT Remove dependencies that are no longer required
+      apt: autoremove=yes
+
+    - name: APT Auto clean
+      apt: autoclean=yes
+
+    - name: KUBE create the kube user account
+      user: name=kube append=yes groups=0 state=present createhome=yes shell=/bin/bash
+
+    - name: KUBE Allow 'kube' to use sudo without needing a password
+      lineinfile:
+        dest: /etc/sudoers
+        line: 'kube ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: KUBE Set up authorized keys for the kube user
+      authorized_key: user=kube key="{{item}}"
+      with_file:
+        - ~/.ssh/id_rsa.pub
+
+    - name: APT Update
+      apt: update_cache=yes
+
+    - name: Install curl & apt-transport-https
+      apt:
+        pkg:
+         - curl
+         - apt-transport-https
+
+    - name: Download Google App-Key
+      ansible.builtin.get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /tmp/googleApi.key
+
+    - name: Apply Google App-Key
+      command: sudo apt-key add /tmp/googleApi.key
+
+    - name: Create Kubernetes package file
+      command: sudo touch /etc/apt/sources.list.d/kubernetes.list
+
+    - name: Add Kubernetes package source
+      blockinfile:
+        path: "/etc/apt/sources.list.d/kubernetes.list"
+        block: |
+          deb https://apt.kubernetes.io/ kubernetes-xenial main      
+
+    - name: APT Update
+      apt: update_cache=yes
+
+    - name: Install kubelet, kubeadm and kubectl
+      apt:
+        pkg:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Kube Hold
+      command: sudo apt-mark hold kubelet kubeadm kubectl
+
+    - name: Kubernetes Version Confirmation
+      command: kubectl version --client && kubeadm version
+      register: kubernetesVersion
+
+    - debug: msg="{{ kubernetesVersion.stdout }}"   
+
+    - name: Disable SWAP, Enable Kernel Modules & crete systemctl file
+      shell: |
+        sudo swapoff -a
+        sudo modprobe overlay 
+        sudo modprobe br_netfilter
+        sudo touch /etc/sysctl.d/kubernetes.conf
+
+    - name: Configure systemctl
+      blockinfile:
+        path: "/etc/sysctl.d/kubernetes.conf"
+        block: |
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+
+    - name: Update systemctl
+      command: sudo sysctl --system
+
+    - name: APT Update
+      apt: update_cache=yes
+
+    - name: DOCKER Installl required packaged
+      apt:
+        pkg:
+        - gnupg2 
+        - software-properties-common
+        - ca-certificates
+
+    - name: DOCKER download ubuntu api key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /tmp/ubuntuApi.key
+
+    - name: DOCKER apply ubuntu api key
+      command: sudo apt-key add /tmp/ubuntuApi.key
+
+    - name: DOCKER add docker registry entry
+      ansible.builtin.apt_repository:
+       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+       state: present
+
+    - name: APT Update
+      apt: update_cache=yes
+
+    - name: DOCKER Installl
+      apt:
+        pkg:
+        - containerd.io
+        - docker-ce 
+        - docker-ce-cli
+
+    - name: DOCKER create required directories
+      shell: |
+        sudo mkdir -p /etc/systemd/system/docker.service.d
+        sudo mkdir -p /etc/docker
+
+    - name: DOCKER Populate config file
+      ansible.builtin.copy:
+        src: dockerconfig.json
+        dest: /etc/docker/daemon.json
+
+    - name: APT Upgrade all apt packages
+      apt: upgrade=dist force_apt_get=yes
+
+    - name: Start Docker
+      shell: |
+        echo 'plugins.cri.systemd_cgroup = true' >> /etc/containerd/config.toml
+        sudo systemctl daemon-reload
+        sudo systemctl restart docker
+        sudo systemctl enable docker
+
+    - name: Initialise CONTROL node
+      shell: |
+        lsmod | grep br_netfilter
+        sudo systemctl enable kubelet
+        sudo kubeadm config images pull
+
+    - name: Enable Kubelete
+      command: sudo systemctl enable kubelet
+    
+    - name: Boostrap Kubernetes cluster
+      command: sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+      register: bootstrapoutput
+
+    - debug: msg="{{ bootstrapoutput.stdout }}"
+
+    - name: Set kube config file
+      shell: |
+        mkdir -p $HOME/.kube
+        sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+        export KUBECONFIG=/etc/kubernetes/admin.conf
+        sudo kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+    - name: Retrieve Cluster Information
+      command: sudo kubectl cluster-info
+      register: custerinfo
+
+    - debug: msg="{{ custerinfo.stdout }}"
+
+    - name: KUBE join kubernetes cluster
+      command: kubeadm join 192.168.1.52:6443 --token vily2d.2zrkpsh4egd6wbr5 --discovery-token-ca-cert-hash sha256:67204ef0eeeb50fa711d1eb803a7a736a86c4c006860ba98c1f10819a99abbbc  --control-plane

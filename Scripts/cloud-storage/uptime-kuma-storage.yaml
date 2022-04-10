@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: uptime-kuma-volume
+  namespace: monitoring
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: uptime-kuma-storage
+  local:
+    path: /opt/uptime-kuma
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - earth
+          - kufu
+          - isis
+          - horus
+          - thoth
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: uptime-kuma-storage
+  namespace: monitoring
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: uptime-kuma-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: uptime-kuma-pvc
+  resources:
+    requests:
+      storage: 5Gi

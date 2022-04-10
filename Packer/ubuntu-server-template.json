@@ -1,0 +1,61 @@
+{
+    "builders": [
+      {
+        "type": "proxmox",
+        "proxmox_url": "https://pyramid.rise:8006/api2/json",
+        "insecure_skip_tls_verify": true,
+        "username": "root@pam!packer",
+        "token": "12aad211-1c96-429f-9051-36270007be72",
+        "memory": 2048,
+        "cores": 2,
+        "node": "pyramid",        
+        "boot_command": [
+            " <wait>",
+            " <wait>",
+            " <wait>",
+            " <wait>",
+            " <wait>",
+            "c",
+            "<wait>",
+            "set gfxpayload=keep",
+            "<enter><wait>",
+            "linux /casper/vmlinuz quiet<wait>",
+            " autoinstall<wait>",
+            " ds=nocloud-net<wait>",
+            "\\;s=http://<wait>",
+            "{{.HTTPIP}}<wait>",
+            ":{{.HTTPPort}}/<wait>",
+            " ---",
+            "<enter><wait>",
+            "initrd /casper/initrd<wait>",
+            "<enter><wait>",
+            "umount /isodevice<enter>",
+            "boot<enter><wait>"
+        ],
+        "network_adapters": [
+          {
+            "bridge": "vmbr0"
+          }
+        ],
+        "disks": [
+          {
+            "type": "scsi",
+            "disk_size": "10G",
+            "storage_pool": "local-zfs",
+            "storage_pool_type": "zfs",
+            "format": "raw",
+            "cache_mode": "writeback"
+          }
+        ],  
+        "iso_file": "local:iso/ubuntu-21.10-live-server-amd64.iso",
+        "boot_wait": "10s",  
+        "ssh_username": "root",
+        "ssh_timeout": "15m",
+        "ssh_password": "packer",  
+        "unmount_iso": true,
+        "template_name": "ubuntu-server-21",
+        "template_description": "ubuntu-server-21, generated on {{ isotime \"2022-04-03T13:09:00Z\" }}"
+      }
+    ]    
+  }
+  
