@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cluster-certificate-self-signed
+  namespace: cert-manager
+spec:
+  dnsNames:
+    - blackstar.first
+    - pyramid.rise
+    - blackstar.truenas
+    - blackstar.uptime
+    - blackstar.practice.litecharms
+    - pyramid.kufu
+    - pyramid.isis
+    - pyramid.horus
+    - pyramid.thoth
+    - localhost
+  secretName: cert-tls-self-signed
+  issuerRef: 
+    name: cluster-issuer-self-signed
+
