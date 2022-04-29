@@ -150,4 +150,5 @@
         sudo systemctl enable docker
 
     - name: KUBE join kubernetes cluster
-      command: kubeadm join 192.168.1.52:6443 --token 1t1ilb.qneojzwzxbtvfojx --discovery-token-ca-cert-hash sha256:67204ef0eeeb50fa711d1eb803a7a736a86c4c006860ba98c1f10819a99abbbc
+      #command: kubeadm join 192.168.1.52:6443 --token 1t1ilb.qneojzwzxbtvfojx --discovery-token-ca-cert-hash sha256:67204ef0eeeb50fa711d1eb803a7a736a86c4c006860ba98c1f10819a99abbbc
+      command: kubeadm join 192.168.1.80:6443 --token v6pzf1.k0mjkf19sugq587d --discovery-token-ca-cert-hash sha256:cb7d162b0ace2828916c29fab07ac9d42044e7551e296e0b4d3c72f47c4a286c

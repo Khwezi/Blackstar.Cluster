@@ -178,5 +178,3 @@
 
     - debug: msg="{{ custerinfo.stdout }}"
 
-    - name: KUBE join kubernetes cluster
-      command: kubeadm join 192.168.1.52:6443 --token vily2d.2zrkpsh4egd6wbr5 --discovery-token-ca-cert-hash sha256:67204ef0eeeb50fa711d1eb803a7a736a86c4c006860ba98c1f10819a99abbbc  --control-plane

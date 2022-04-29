@@ -1,10 +1,7 @@
 # Lab Kubernetes cluster VM Nodes
 [mains]
-#earth ansible_host=192.168.1.52
+blackstar.prime ansible_host=192.168.1.80
 
 [workers]
-#moon ansible_host=192.168.1.60
-kufu ansible_host=192.168.1.49
-isis ansible_host=192.168.1.50
-horus ansible_host=192.168.1.53
-thoth ansible_host=192.168.1.55
+pyramid.sunrise ansible_host=192.168.1.82
+pyramid.noon ansible_host=192.168.1.83
